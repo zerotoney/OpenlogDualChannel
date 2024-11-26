@@ -9,3 +9,6 @@ https://github.com/sboesebeck/blackbox-firmware/
  4. 115200 is working. But there is some crashing in bytes due to the soft serial. do not suggest for higher baudrate for dual channel. 
  5. Buffer size is 128 bytes.
  6. 10 bytes time out for recording from buffer to SD card. 
+
+# Connection for downloading
+![Connection](connection.png "Connection")
