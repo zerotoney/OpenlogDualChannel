@@ -54,7 +54,7 @@
  Dual Channel edition
  1. Record two channels, can store it into one SDCARD. 
  2. can be configured as mark channel 1 and 2, channle 1 is hardware serial port, the channel 2 is software serial port. 
- 3. Using IO6 and IO8 as soft serial port RX and TX.
+ 3. Using IO6(TX) and IO8(RX) as soft serial port.
  4. 115200 is working. But there is some crashing in bytes due to the soft serial. do not suggest for higher baudrate for dual channel. 
  5. Buffer size is 128 bytes.
  6. 10 bytes time out for recording from buffer to SD card. 
@@ -80,7 +80,7 @@ SerialPort<0, 800, 0> NewSerial;
 //#define DEBUG  1
 #define DEBUG  0
 
-#define CFG_FILENAME "Dualconfig.txt" //This is the name of the file that contains the unit settings
+#define CFG_FILENAME "duconfig.txt" //This is the name of the file that contains the unit settings
 
 #define MAX_CFG "1000000,0\0" // baud 
 #define CFG_LENGTH (strlen(MAX_CFG) + 1) //Length of text found in config file. strlen ignores \0 so we have to add it back 
@@ -106,8 +106,8 @@ SerialPort<0, 800, 0> NewSerial;
 #define STAT2_PORT  PORTB
 const byte statled1 = 5;  //This is the normal status LED
 const byte statled2 = 13; //This is the SPI LED, indicating SD traffic
-const byte softRxdpin = 8; //Soft Serial RXD pin
-const byte softTxdpin = 6; //Soft Serial TXD pin
+const byte softRxdpin = 8; //Soft Serial RXD pin io8=pin12
+const byte softTxdpin = 6; //Soft Serial TXD pin io6=pin10
 
 //Blinking LED error codes
 #define ERROR_SD_INIT	  3
@@ -180,7 +180,7 @@ void systemError(byte error_type) {
 
 void setup(void) {
     pinMode(statled1, OUTPUT);
-    pinMode(softRxdpin, INPUT);
+    pinMode(softRxdpin, INPUT_PULLUP);
     pinMode(softTxdpin, OUTPUT);
 
 
@@ -220,6 +220,7 @@ void setup(void) {
         UCSR0A &= ~_BV(U2X0);
     }
     NewSerial.print(F("8"));
+    NewSerial.print(F("hard"));
     SoftSerial.print(F("soft"));
 
     //Setup SD & FAT
@@ -395,17 +396,15 @@ void append_file(char* file_name) {
                 workingFile.write("\n2:", 3); //Record the buffer to the card
               }
               workingFile.write(localSoftBuffer, ns); //Record the buffer to the card
+              //NewSerial.println(ns);
+              //NewSerial.println((char *)localSoftBuffer);
             }
 
             STAT1_PORT ^= (1 << STAT1); //Toggle the STAT1 LED each time we record the buffer
 
-            //This will force a sync approximately every 5 seconds
-            if ((millis() - lastSyncTime) > MAX_TIME_BEFORE_SYNC_MSEC) {
-                //This is here to make sure a log is recorded in the instance
-                //where the user is throwing non-stop data at the unit from power on to forever
-                workingFile.sync(); //Sync the card
-                lastSyncTime = millis();
-            }
+
+            workingFile.sync(); //Sync the card
+
         }
         //No characters recevied?
         else if ((millis() - lastSyncTime) > MAX_IDLE_TIME_MSEC) { //If we haven't received any characters for a while, go to sleep
